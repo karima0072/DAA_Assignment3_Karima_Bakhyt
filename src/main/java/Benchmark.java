@@ -322,10 +322,14 @@ public class Benchmark {
 
             times[run] = (end - start) / 1_000_000.0;
 
+
             if (run == 0) {
                 result = order.size();
                 edgeScans = algorithm.getMetrics().edgeScans;
+
+                validateTopologicalOrder(graph, order);
             }
+
         }
 
         if (edgeScans != m) {
@@ -410,6 +414,44 @@ public class Benchmark {
                 result
         );
     }
+
+    private static void validateTopologicalOrder(
+            Graph graph,
+            List<Integer> order
+    ) {
+        int n = graph.vertexCount();
+
+        if (order.size() != n) {
+            throw new IllegalStateException(
+                    "Invalid topological order length"
+            );
+        }
+
+        int[] position = new int[n];
+        Arrays.fill(position, -1);
+
+        for (int i = 0; i < order.size(); i++) {
+            int vertex = order.get(i);
+
+            if (vertex < 0 || vertex >= n || position[vertex] != -1) {
+                throw new IllegalStateException(
+                        "Invalid or duplicate vertex in topological order"
+                );
+            }
+
+            position[vertex] = i;
+        }
+
+        for (Edge edge : graph.getEdges()) {
+            if (position[edge.from] >= position[edge.to]) {
+                throw new IllegalStateException(
+                        "Invalid topological order: edge " +
+                                edge.from + " -> " + edge.to
+                );
+            }
+        }
+    }
+
 
     private static void checkReference(
             int index,
